@@ -168,14 +168,14 @@ export default function Calendar() {
             </div>
                  {/* Selected Day View */}
                 <div className="w-full lg:w-80 bg-slate-50/50 p-4 sm:p-6 overflow-y-auto flex flex-col">
-                    <div className="flex items-center justify-between mb-4 sm:mb-6 flex-shrink-0">
+                    <div className="flex items-center justify-between mb-4 sm:mb-6 shrink-0">
                         <div>
                             <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">Schedule</h3>
                             {selectedDay !== null && (
                                 <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{selectedDay} {MONTHS[month]}</p>
                             )}
                         </div>
-                        <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-300 flex-shrink-0">
+                        <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center text-slate-300 shrink-0">
                             <Clock className="w-5 h-5" />
                         </div>
                     </div>
@@ -202,11 +202,11 @@ export default function Calendar() {
                                         }`}
                                 >
                                     <div className="flex gap-2 sm:gap-3">
-                                        <div className={`mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${task.completed ? 'bg-emerald-500 border-emerald-500' : 'border-slate-200'
+                                        <div className={`mt-0.5 w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${task.completed ? 'bg-emerald-500 border-emerald-500' : 'border-slate-200'
                                             }`}>
                                             {task.completed && <Check className="w-2.5 h-2.5 text-white" />}
                                         </div>
-                                        <p className={`text-xs sm:text-sm font-semibold leading-relaxed break-words ${task.completed ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
+                                        <p className={`text-xs sm:text-sm font-semibold leading-relaxed wrap-break-word ${task.completed ? 'text-slate-400 line-through' : 'text-slate-700'}`}>
                                             {task.text}
                                         </p>
                                     </div>

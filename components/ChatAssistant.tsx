@@ -243,7 +243,7 @@ export default function ChatAssistant() {
     };
 
     return (
-        <div className="flex flex-col h-[600px] bg-white">
+        <div className="flex flex-col h-150 bg-white">
             {/* Chat header */}
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                 <div className="flex items-center gap-3">

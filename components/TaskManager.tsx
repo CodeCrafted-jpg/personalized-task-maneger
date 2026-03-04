@@ -196,7 +196,7 @@ export default function TaskManager() {
                 {/* Progress bar */}
                 <div className="w-24 h-2 rounded-full bg-neutral-800 overflow-hidden">
                     <div
-                        className="h-full bg-gradient-to-r from-teal-500 to-teal-400 transition-all duration-500"
+                        className="h-full bg-linear-to-r from-teal-500 to-teal-400 transition-all duration-500"
                         style={{ width: tasks.length ? `${(completedCount / tasks.length) * 100}%` : '0%' }}
                     />
                 </div>
@@ -248,7 +248,7 @@ export default function TaskManager() {
             </div>
 
             {/* Task list */}
-            <div className="flex flex-col gap-2 max-h-[400px] overflow-y-auto pr-1">
+            <div className="flex flex-col gap-2 max-h-100 overflow-y-auto pr-1">
                 {tasks.length === 0 && (
                     <div className="text-center py-12 text-neutral-500 text-sm">
                         No tasks yet. Add one above or use your voice!
@@ -265,7 +265,7 @@ export default function TaskManager() {
                         {/* Checkbox */}
                         <button
                             onClick={() => toggleTask(task._id, task.completed)}
-                            className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${task.completed
+                            className={`shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${task.completed
                                     ? 'bg-teal-500 border-teal-500'
                                     : 'border-neutral-600 hover:border-teal-500'
                                 }`}
@@ -284,11 +284,11 @@ export default function TaskManager() {
                                         if (e.key === 'Enter') saveEdit(task._id);
                                         if (e.key === 'Escape') setEditingId(null);
                                     }}
-                                    className="w-full bg-transparent text-sm text-white focus:outline-none border-b border-teal-500/50 break-words"
+                                    className="w-full bg-transparent text-sm text-white focus:outline-none border-b border-teal-500/50 wrap-break-word"
                                 />
                             ) : (
                                 <span
-                                    className={`block text-sm leading-relaxed break-words hyphens-auto ${task.completed ? 'line-through text-neutral-500' : 'text-neutral-100'
+                                    className={`block text-sm leading-relaxed wrap-break-word hyphens-auto ${task.completed ? 'line-through text-neutral-500' : 'text-neutral-100'
                                         }`}
                                 >
                                     {task.text}
@@ -298,14 +298,14 @@ export default function TaskManager() {
 
                         {/* Due date badge */}
                         {task.dueDate && !editingId && (
-                            <span className="flex sm:flex items-center gap-1 text-xs text-neutral-500 bg-neutral-800 px-2 py-0.5 rounded-full w-fit flex-shrink-0">
-                                <Calendar className="w-3 h-3 flex-shrink-0" />
+                            <span className="flex sm:flex items-center gap-1 text-xs text-neutral-500 bg-neutral-800 px-2 py-0.5 rounded-full w-fit shrink-0">
+                                <Calendar className="w-3 h-3 shrink-0" />
                                 <span className="break-keep">{new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                             </span>
                         )}
 
                         {/* Action buttons */}
-                        <div className="flex items-center gap-1 opacity-0 sm:group-hover:opacity-100 transition-opacity flex-shrink-0 ml-auto sm:ml-0">
+                        <div className="flex items-center gap-1 opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0 ml-auto sm:ml-0">
                             {editingId === task._id ? (
                                 <>
                                     <button

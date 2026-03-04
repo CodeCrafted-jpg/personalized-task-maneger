@@ -18,7 +18,7 @@ export default function TasksPage() {
                     </div>
 
                     {/* Sidebar / Secondary Sections */}
-                    <div className="w-full lg:w-[400px] flex flex-col gap-10">
+                    <div className="w-full lg:w-100 flex flex-col gap-10">
                         <section className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
                             <Calendar />
                         </section>

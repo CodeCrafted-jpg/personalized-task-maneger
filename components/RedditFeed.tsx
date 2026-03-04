@@ -52,7 +52,7 @@ export default function RedditFeed() {
     };
 
     return (
-        <div className="flex flex-col h-[600px] bg-white">
+        <div className="flex flex-col h-150 bg-white">
             {/* Header */}
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                 <div className="flex items-center gap-3">
@@ -90,7 +90,7 @@ export default function RedditFeed() {
                             r/{sub}
                         </button>
                     ))}
-                    <div className="relative ml-2 min-w-[150px]">
+                    <div className="relative ml-2 min-w-37.5">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                         <input
                             type="text"

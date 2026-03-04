@@ -73,7 +73,7 @@ export default function TelegramConfig() {
     };
 
     return (
-        <div className="flex flex-col h-[600px] bg-white">
+        <div className="flex flex-col h-150 bg-white">
             {/* Header Area */}
             <div className="px-6 py-6 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -94,7 +94,7 @@ export default function TelegramConfig() {
             <div className="flex-1 overflow-y-auto p-8 flex flex-col gap-10">
                 {/* Visual Intro */}
                 <div className="flex flex-col items-center text-center gap-4 py-4">
-                    <div className="w-16 h-16 rounded-[2rem] bg-blue-50 flex items-center justify-center text-blue-500">
+                    <div className="w-16 h-16 rounded-4xl bg-blue-50 flex items-center justify-center text-blue-500">
                         <ShieldCheck className="w-8 h-8" />
                     </div>
                     <div className="max-w-xs">

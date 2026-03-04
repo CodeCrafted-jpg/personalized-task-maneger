@@ -185,7 +185,7 @@ export default function TaskList() {
                 style={{ animationDelay: `${index * 0.05}s` }}
             >
                 {/* Timeline connector */}
-                <div className="absolute left-[1.125rem] top-0 bottom-0 w-0.5 bg-slate-100 last:h-8" />
+                <div className="absolute left-4.5 top-0 bottom-0 w-0.5 bg-slate-100 last:h-8" />
 
                 {/* Timeline node */}
                 <div className={`absolute left-0 top-6 w-9 h-9 rounded-full border-4 border-white ${task.completed ? 'bg-emerald-500' : color.accent} shadow-sm z-10 flex items-center justify-center text-white`}>
@@ -201,16 +201,16 @@ export default function TaskList() {
                                 onChange={(e) => setEditText(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && saveEdit(task._id)}
                                 onBlur={() => setEditingId(null)}
-                                className="w-full bg-transparent text-base sm:text-lg font-bold text-slate-900 border-b-2 border-primary focus:outline-none break-words"
+                                className="w-full bg-transparent text-base sm:text-lg font-bold text-slate-900 border-b-2 border-primary focus:outline-none wrap-break-word"
                             />
                         ) : (
                             <div className="flex flex-col gap-2">
-                                <h3 className={`text-base sm:text-lg font-bold leading-normal break-words hyphens-auto ${task.completed ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+                                <h3 className={`text-base sm:text-lg font-bold leading-normal wrap-break-word hyphens-auto ${task.completed ? 'line-through text-slate-400' : 'text-slate-900'}`}>
                                     {task.text}
                                 </h3>
                                 {task.dueDate && (
                                     <div className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-slate-500 w-fit">
-                                        <CalendarDays className="w-3.5 h-3.5 flex-shrink-0" />
+                                        <CalendarDays className="w-3.5 h-3.5 shrink-0" />
                                         <span>{new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
                                     </div>
                                 )}
@@ -218,7 +218,7 @@ export default function TaskList() {
                         )}
                     </div>
 
-                    <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex items-center gap-2 shrink-0">
                         {!task.completed && (
                             <button
                                 onClick={() => toggleTask(task._id, task.completed)}
@@ -349,7 +349,7 @@ export default function TaskList() {
                 <h3 className="text-lg font-semibold text-slate-800 mb-2">
                     No upcoming tasks
                 </h3>
-                <p className="text-sm text-slate-400 max-w-[200px] leading-relaxed">
+                <p className="text-sm text-slate-400 max-w-50 leading-relaxed">
                     You're all caught up. Add a task to get started.
                 </p>
             </div>
@@ -368,7 +368,7 @@ export default function TaskList() {
                 <h3 className="text-lg font-semibold text-slate-800 mb-2">
                     No completed tasks
                 </h3>
-                <p className="text-sm text-slate-400 max-w-[200px] leading-relaxed">
+                <p className="text-sm text-slate-400 max-w-50 leading-relaxed">
                     Finished tasks will appear here once you complete them.
                 </p>
             </div>
