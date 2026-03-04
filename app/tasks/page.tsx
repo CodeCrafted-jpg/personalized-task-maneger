@@ -22,9 +22,9 @@ export default function TasksPage() {
                         <section className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
                             <Calendar />
                         </section>
-                        <section className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
+                        {/* <section className="bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 overflow-hidden">
                             <TelegramConfig />
-                        </section>
+                        </section> */}
                     </div>
                 </div>
             </main>

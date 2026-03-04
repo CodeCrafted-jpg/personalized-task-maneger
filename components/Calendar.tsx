@@ -148,7 +148,7 @@ export default function Calendar() {
                                     onClick={() => setSelectedDay(day)}
                                     style={{ aspectRatio: '1' }}
                                     className={`relative w-full flex flex-col items-center justify-center rounded-lg sm:rounded-2xl text-xs sm:text-sm font-bold transition-all group overflow-hidden ${isSelected
-                                            ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                                            ? 'bg-primary text-black shadow-lg shadow-primary/20'
                                             : todayFlag
                                                 ? 'bg-purple-50 text-purple-600 border border-purple-100'
                                                 : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
@@ -164,7 +164,9 @@ export default function Calendar() {
                     </div>
                 </div>
 
-                {/* Selected Day View */}
+           
+            </div>
+                 {/* Selected Day View */}
                 <div className="w-full lg:w-80 bg-slate-50/50 p-4 sm:p-6 overflow-y-auto flex flex-col">
                     <div className="flex items-center justify-between mb-4 sm:mb-6 flex-shrink-0">
                         <div>
@@ -213,7 +215,6 @@ export default function Calendar() {
                         )}
                     </div>
                 </div>
-            </div>
         </div>
     );
 }
