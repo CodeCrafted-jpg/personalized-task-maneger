@@ -289,12 +289,12 @@ export default function TaskList() {
                         className="hidden md:block bg-white px-4 py-4 rounded-xl font-bold text-slate-500 focus:outline-none shadow-sm cursor-pointer"
                         title="Due Date"
                     />
-                    <button
+                    {/* <button
                         onClick={isListening ? stopListening : startListening}
                         className={`w-14 h-14 rounded-xl flex items-center justify-center transition-all ${isListening ? 'bg-rose-500 text-white animate-pulse' : 'bg-white text-slate-400 hover:text-primary shadow-sm'}`}
                     >
                         {isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
-                    </button>
+                    </button> */}
                     <button
                         onClick={() => addTask(input, dueDate)}
                         disabled={!input.trim() || loading}
@@ -332,51 +332,51 @@ export default function TaskList() {
             </div>
 
             {/* Task Timeline */}
-         <div className="flex flex-col">
-    {currentTasks.length === 0 ? (
-        activeTab === 'upcoming' ? (
-            // ── Upcoming: All caught up ───────────────────────────
-            <div className="py-20 flex flex-col items-center text-center">
-                {/* Icon: simple circle with a checkmark, no fill */}
-                <div className="w-14 h-14 rounded-full border-2 border-slate-200 flex items-center justify-center mb-6">
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
-                        <polyline points="4 10 8.5 14.5 16 7" />
-                    </svg>
-                </div>
-                <p className="text-[13px] font-semibold text-slate-400 uppercase tracking-[0.12em] mb-2">
-                    All clear
-                </p>
-                <h3 className="text-lg font-semibold text-slate-800 mb-2">
-                    No upcoming tasks
-                </h3>
-                <p className="text-sm text-slate-400 max-w-50 leading-relaxed">
-                    You're all caught up. Add a task to get started.
-                </p>
+            <div className="flex flex-col">
+                {currentTasks.length === 0 ? (
+                    activeTab === 'upcoming' ? (
+                        // ── Upcoming: All caught up ───────────────────────────
+                        <div className="py-20 flex flex-col items-center text-center">
+                            {/* Icon: simple circle with a checkmark, no fill */}
+                            <div className="w-14 h-14 rounded-full border-2 border-slate-200 flex items-center justify-center mb-6">
+                                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
+                                    <polyline points="4 10 8.5 14.5 16 7" />
+                                </svg>
+                            </div>
+                            <p className="text-[13px] font-semibold text-slate-400 uppercase tracking-[0.12em] mb-2">
+                                All clear
+                            </p>
+                            <h3 className="text-lg font-semibold text-slate-800 mb-2">
+                                No upcoming tasks
+                            </h3>
+                            <p className="text-sm text-slate-400 max-w-50 leading-relaxed">
+                                You're all caught up. Add a task to get started.
+                            </p>
+                        </div>
+                    ) : (
+                        // ── Completed: Nothing here yet ───────────────────────
+                        <div className="py-20 flex flex-col items-center text-center">
+                            {/* Icon: three horizontal lines suggesting an empty list */}
+                            <div className="w-14 h-14 rounded-full border-2 border-slate-200 flex flex-col items-center justify-center gap-1.5 mb-6">
+                                <span className="w-5 h-px bg-slate-300 block" />
+                                <span className="w-3.5 h-px bg-slate-200 block" />
+                                <span className="w-4 h-px bg-slate-200 block" />
+                            </div>
+                            <p className="text-[13px] font-semibold text-slate-400 uppercase tracking-[0.12em] mb-2">
+                                Nothing yet
+                            </p>
+                            <h3 className="text-lg font-semibold text-slate-800 mb-2">
+                                No completed tasks
+                            </h3>
+                            <p className="text-sm text-slate-400 max-w-50 leading-relaxed">
+                                Finished tasks will appear here once you complete them.
+                            </p>
+                        </div>
+                    )
+                ) : (
+                    currentTasks.map((task, idx) => renderTaskItem(task, idx))
+                )}
             </div>
-        ) : (
-            // ── Completed: Nothing here yet ───────────────────────
-            <div className="py-20 flex flex-col items-center text-center">
-                {/* Icon: three horizontal lines suggesting an empty list */}
-                <div className="w-14 h-14 rounded-full border-2 border-slate-200 flex flex-col items-center justify-center gap-1.5 mb-6">
-                    <span className="w-5 h-px bg-slate-300 block" />
-                    <span className="w-3.5 h-px bg-slate-200 block" />
-                    <span className="w-4 h-px bg-slate-200 block" />
-                </div>
-                <p className="text-[13px] font-semibold text-slate-400 uppercase tracking-[0.12em] mb-2">
-                    Nothing yet
-                </p>
-                <h3 className="text-lg font-semibold text-slate-800 mb-2">
-                    No completed tasks
-                </h3>
-                <p className="text-sm text-slate-400 max-w-50 leading-relaxed">
-                    Finished tasks will appear here once you complete them.
-                </p>
-            </div>
-        )
-    ) : (
-        currentTasks.map((task, idx) => renderTaskItem(task, idx))
-    )}
-</div>
         </div>
     );
 }
