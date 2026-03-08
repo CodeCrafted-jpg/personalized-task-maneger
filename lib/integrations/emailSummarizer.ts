@@ -10,11 +10,10 @@ export interface GmailSummary {
   from: string;
   receivedAt: Date;
   summary: string;
-  snippet?: string; // original snippet (optional)
+  snippet?: string;
 }
 
 function b64UrlDecode(input: string): string {
-  // Gmail uses base64url. Convert to standard base64 and decode.
   let s = input.replace(/-/g, '+').replace(/_/g, '/');
   while (s.length % 4) s += '=';
   return Buffer.from(s, 'base64').toString('utf-8');
@@ -24,8 +23,13 @@ function stripHtml(html: string): string {
   return html.replace(/<\/?[^>]+(>|$)/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
+// ── Cohere summarizer ─────────────────────────────────────────────────────────
+
 async function cohereSummarize(text: string): Promise<string> {
-  if (!process.env.COHERE_API_KEY) return text.slice(0, 200);
+  if (!process.env.COHERE_API_KEY) {
+    console.warn('COHERE_API_KEY is not set — returning plain text fallback.');
+    return text.slice(0, 200);
+  }
 
   try {
     const prompt = `Summarize the following email in one short sentence (focus on the key purpose or action):\n\n${text}`;
@@ -51,7 +55,6 @@ async function cohereSummarize(text: string): Promise<string> {
     }
 
     const data = await res.json();
-    // Cohere chat might return user-visible text in different shape; try common fields:
     const maybe = data?.text ?? data?.message ?? data?.generations?.[0]?.text ?? '';
     return (maybe || text.slice(0, 200)).trim();
   } catch (err) {
@@ -60,42 +63,49 @@ async function cohereSummarize(text: string): Promise<string> {
   }
 }
 
+// ── Body extractor ────────────────────────────────────────────────────────────
+
 async function extractPlainTextFromPayload(payload: any): Promise<string> {
-  // Recursively walk parts and prefer text/plain
   if (!payload) return '';
 
-  const walk = (node: any): string | null => {
-    if (!node) return null;
+  // FIX: walk now collects text/plain and text/html separately,
+  // always preferring plain text. Previously it returned the first
+  // match which could be raw HTML, poisoning the Cohere input.
+  const walk = (node: any): { plain: string | null; html: string | null } => {
+    if (!node) return { plain: null, html: null };
 
-    // If this node itself has MIME type and body.data
     if (node.mimeType === 'text/plain' && node.body?.data) {
-      return b64UrlDecode(node.body.data);
+      return { plain: b64UrlDecode(node.body.data), html: null };
     }
 
     if (node.mimeType === 'text/html' && node.body?.data) {
-      return stripHtml(b64UrlDecode(node.body.data));
+      return { plain: null, html: stripHtml(b64UrlDecode(node.body.data)) };
     }
 
     if (Array.isArray(node.parts)) {
+      let bestHtml: string | null = null;
       for (const p of node.parts) {
         const r = walk(p);
-        if (r) return r;
+        if (r.plain) return { plain: r.plain, html: null }; // plain text wins immediately
+        if (r.html && !bestHtml) bestHtml = r.html;
       }
+      return { plain: null, html: bestHtml };
     }
-    return null;
+
+    return { plain: null, html: null };
   };
 
-  // first try top-level body
-  const top = payload.body?.data ? b64UrlDecode(payload.body.data) : null;
-  if (top) {
-    // if it looks like HTML, strip tags
-    if (/<[a-z][\s\S]*>/i.test(top)) return stripHtml(top);
-    return top;
+  // Check top-level body first
+  if (payload.body?.data) {
+    const decoded = b64UrlDecode(payload.body.data);
+    return /<[a-z][\s\S]*>/i.test(decoded) ? stripHtml(decoded) : decoded;
   }
 
-  const found = walk(payload);
-  return found ?? '';
+  const { plain, html } = walk(payload);
+  return plain ?? html ?? '';
 }
+
+// ── Gmail OAuth ───────────────────────────────────────────────────────────────
 
 async function getGmailAccessToken(): Promise<string> {
   if (!process.env.GMAIL_CLIENT_ID || !process.env.GMAIL_CLIENT_SECRET || !process.env.GMAIL_REFRESH_TOKEN) {
@@ -122,11 +132,8 @@ async function getGmailAccessToken(): Promise<string> {
   return data.access_token as string;
 }
 
-/**
- * Main function: list recent messages and fetch+summarize their bodies.
- * - sinceHours: how far back to look (default 25)
- * - concurrency: number of parallel fetch+summarize jobs
- */
+// ── Main export ───────────────────────────────────────────────────────────────
+
 export async function fetchAndSummarizeGmailMessages({
   sinceHours = 25,
   concurrency = 3,
@@ -140,7 +147,6 @@ export async function fetchAndSummarizeGmailMessages({
     const accessToken = await getGmailAccessToken();
     const since = Math.floor((Date.now() - sinceHours * 60 * 60 * 1000) / 1000);
 
-    // 1) list messages
     const listRes = await fetch(
       `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=after:${since}&maxResults=${maxMessages}`,
       { headers: { Authorization: `Bearer ${accessToken}` } }
@@ -152,7 +158,6 @@ export async function fetchAndSummarizeGmailMessages({
     const listData = await listRes.json();
     const messageIds: string[] = (listData.messages ?? []).map((m: any) => m.id);
 
-    // 2) process in batches
     const results: GmailSummary[] = [];
     for (let i = 0; i < messageIds.length; i += concurrency) {
       const batch = messageIds.slice(i, i + concurrency);
@@ -173,19 +178,13 @@ export async function fetchAndSummarizeGmailMessages({
           const dateStr = headers.find((h) => h.name === 'Date')?.value ?? '';
           const receivedAt = dateStr ? new Date(dateStr) : new Date();
 
-          // Get best body text
+          // FIX: bodyText now properly prefers plain text over HTML
           const bodyText = await extractPlainTextFromPayload(msg.payload);
-          const toSummarize = bodyText || msg.snippet || '';
+          // FIX: strip HTML from snippet too before passing to Cohere
+          const toSummarize = bodyText || stripHtml(msg.snippet ?? '');
 
           const summary = toSummarize ? await cohereSummarize(toSummarize) : '(no content)';
-          return {
-            id,
-            subject,
-            from,
-            receivedAt,
-            summary,
-            snippet: msg.snippet,
-          } as GmailSummary;
+          return { id, subject, from, receivedAt, summary, snippet: msg.snippet } as GmailSummary;
         } catch (err) {
           console.error('email processing error', err);
           return null;
@@ -194,8 +193,6 @@ export async function fetchAndSummarizeGmailMessages({
 
       const settled = await Promise.all(promises);
       for (const r of settled) if (r) results.push(r);
-
-      // tiny pause to be polite to APIs (avoid bursting)
       await new Promise((res) => setTimeout(res, 120));
     }
 
