@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
-import Task from '@/lib/models/Task';
+import { Task, Event } from '@/lib/models/Task';
 import { fetchWeather, WeatherReport } from '@/lib/integrations/dailyDigest';
 import { fetchAndSummarizeGmailMessages, GmailSummary } from '@/lib/integrations/emailSummarizer';
 
@@ -11,6 +11,13 @@ interface YoutubeVideo {
     url: string;
     channel: string;
     publishedAt: Date;
+}
+
+interface TaskDoc {
+    text: string;
+    dueDate: Date | null;
+    completed: boolean;
+    eventId: string | null;
 }
 
 // ─── YouTube RSS helpers ───────────────────────────────────────────────────────
@@ -83,13 +90,14 @@ async function sendTelegramMessage(token: string, chatId: string, text: string) 
 // ─── Message builder ───────────────────────────────────────────────────────────
 
 function buildMorningMessage(params: {
-    dateStr: string;
-    tasks:   { text: string; dueDate: Date | null }[];
-    videos:  YoutubeVideo[];
-    emails:  GmailSummary[];
-    weather: WeatherReport | null;
+    dateStr:         string;
+    standaloneTasks: TaskDoc[];
+    eventGroups:     { eventTitle: string; targetDate: Date; tasks: TaskDoc[] }[];
+    videos:          YoutubeVideo[];
+    emails:          GmailSummary[];
+    weather:         WeatherReport | null;
 }): string {
-    const { dateStr, tasks, videos, emails, weather } = params;
+    const { dateStr, standaloneTasks, eventGroups, videos, emails, weather } = params;
     const sections: string[] = [];
 
     sections.push(`🌅 *Good morning\\! Daily Digest*\n📅 ${escapeMd(dateStr)}`);
@@ -104,17 +112,39 @@ function buildMorningMessage(params: {
         );
     }
 
-    // ── Tasks ─────────────────────────────────────────────────────────────────
-    if (tasks.length === 0) {
+    // ── Standalone Tasks ──────────────────────────────────────────────────────
+    if (standaloneTasks.length === 0 && eventGroups.length === 0) {
         sections.push(`✅ *Tasks*\nNo tasks due today\\. Enjoy your day\\! 🎉`);
     } else {
-        const taskLines = tasks
-            .map((t, i) => {
-                const label = t.dueDate ? `_\\(due today\\)_` : `_\\(pending\\)_`;
-                return `${i + 1}\\. ${escapeMd(t.text)} ${label}`;
-            })
-            .join('\n');
-        sections.push(`📋 *Tasks \\(${tasks.length}\\)*\n${taskLines}`);
+        if (standaloneTasks.length > 0) {
+            const taskLines = standaloneTasks
+                .map((t, i) => {
+                    const label = t.dueDate ? `_\\(due today\\)_` : `_\\(pending\\)_`;
+                    return `${i + 1}\\. ${escapeMd(t.text)} ${label}`;
+                })
+                .join('\n');
+            sections.push(`📋 *Tasks \\(${standaloneTasks.length}\\)*\n${taskLines}`);
+        }
+
+        // ── Event Task Groups ─────────────────────────────────────────────────
+        for (const group of eventGroups) {
+            const daysLeft = Math.ceil(
+                (group.targetDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+            );
+            const daysLabel = daysLeft === 1
+                ? `_1 day left_`
+                : daysLeft <= 0
+                    ? `_due today\\!_`
+                    : `_${daysLeft} days left_`;
+
+            const taskLines = group.tasks
+                .map((t, i) => `${i + 1}\\. ${escapeMd(t.text)}`)
+                .join('\n');
+
+            sections.push(
+                `🗓 *${escapeMd(group.eventTitle)}* ${daysLabel}\n${taskLines}`
+            );
+        }
     }
 
     // ── YouTube ───────────────────────────────────────────────────────────────
@@ -182,7 +212,7 @@ export async function GET(req: Request) {
         const start = new Date(today); start.setHours(0, 0, 0, 0);
         const end   = new Date(today); end.setHours(23, 59, 59, 999);
 
-        const [tasksDueToday, videos, emails, weather] = await Promise.all([
+        const [allTasks, videos, emails, weather] = await Promise.all([
             Task.find({
                 completed: false,
                 $or: [
@@ -191,12 +221,41 @@ export async function GET(req: Request) {
                 ],
             })
                 .sort({ dueDate: 1, createdAt: 1 })
-                .limit(20),
+                .limit(30),
 
             fetchNewYouTubeVideos(25),
             fetchAndSummarizeGmailMessages({ sinceHours: 25, maxMessages: 8 }),
             fetchWeather(),
         ]);
+
+        // ── Split tasks: standalone vs event-linked ───────────────────────────
+        const standaloneTasks = allTasks.filter(t => !t.eventId);
+        const eventTasks      = allTasks.filter(t => t.eventId);
+
+        // Group event tasks by eventId
+        const eventMap = new Map<string, TaskDoc[]>();
+        for (const t of eventTasks) {
+            const key = t.eventId!.toString();
+            if (!eventMap.has(key)) eventMap.set(key, []);
+            eventMap.get(key)!.push(t);
+        }
+
+        // Fetch event titles for the grouped IDs
+        let eventGroups: { eventTitle: string; targetDate: Date; tasks: TaskDoc[] }[] = [];
+        if (eventMap.size > 0) {
+            const eventIds  = Array.from(eventMap.keys());
+            const events    = await Event.find({ _id: { $in: eventIds } }).select('title targetDate');
+            const eventById = new Map(events.map(e => [e._id.toString(), e]));
+
+            eventGroups = eventIds
+                .filter(id => eventById.has(id))
+                .map(id => ({
+                    eventTitle: eventById.get(id)!.title,
+                    targetDate: eventById.get(id)!.targetDate,
+                    tasks:      eventMap.get(id)!,
+                }))
+                .sort((a, b) => a.targetDate.getTime() - b.targetDate.getTime());
+        }
 
         const dateStr = today.toLocaleDateString('en-IN', {
             weekday:  'long',
@@ -206,23 +265,30 @@ export async function GET(req: Request) {
             timeZone: 'Asia/Kolkata',
         });
 
-        const message = buildMorningMessage({ dateStr, tasks: tasksDueToday, videos, emails, weather });
+        const message = buildMorningMessage({
+            dateStr,
+            standaloneTasks,
+            eventGroups,
+            videos,
+            emails,
+            weather,
+        });
 
         await sendTelegramMessage(token, chatId, message);
 
         return NextResponse.json({
-            success: true,
-            tasks:   tasksDueToday.length,
-            videos:  videos.length,
-            emails:  emails.length,
-            weather: weather?.city ?? null,
+            success:         true,
+            standaloneTasks: standaloneTasks.length,
+            eventGroups:     eventGroups.length,
+            videos:          videos.length,
+            emails:          emails.length,
+            weather:         weather?.city ?? null,
         });
     } catch (error) {
         console.error('Telegram remind error:', error);
         return NextResponse.json({ success: false }, { status: 500 });
     }
 }
-
 
 
 // import { NextResponse } from 'next/server';
